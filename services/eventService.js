@@ -101,3 +101,31 @@ export async function deleteEvent(id) {
     await writeEvents(events); // save the updated array back to disk
     return deletedEvent; // Return the deleted event back to the route handler
 }
+
+// Deletes all events whose date/time is in the past
+export async function deleteExpiredEvents(){
+    //Fetch all evnets and grab the exact timestamp for "now"
+    const events = await getAllEvents();
+    const now = new Date();
+
+    //Seperate expired events from upcoming ones in a clean, readable pass
+    const expiredEvents = events.filter(event => {
+        const eventDateTime = new Date(`${event.date}T${event.time}`);
+        return eventDateTime < now;
+    })
+
+    const remainingEvents = events.filter(event => {
+        const eventDateTime = new Date(`${event.date}T${event.time}`);
+        return eventDateTime >= now;
+    });
+
+    //skip disk write if nothing changes
+    if (expiredEvents.length === 0) {
+        return []; // return empty array to indicate zero deletions
+    }
+
+    //Save the remaining events back to the database
+    await writeEvents(remainingEvents);
+
+    return expiredEvents; //Return list of removed items back to the route handler
+}
