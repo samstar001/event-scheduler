@@ -66,7 +66,7 @@ export async function updateEvent(id, data) {
     if (errors.length > 0) {
         const validationError = new Error("Validation Failed");
         validationError.details = errors;
-        validationError.status = 400;
+        validationError.statusCode = 400;
         throw validationError;
     }
 
@@ -95,9 +95,9 @@ export async function deleteEvent(id) {
     }
 
     //Extract and save a reference tothe event before removing it
-    const deleteEvent = events[index];
+    const deletedEvent = events[index];
     events.splice(index, 1); //Remove exactly 1 element at the found index position
     
     await writeEvents(events); // save the updated array back to disk
-    return deleteEvent; // Return the deleted event back to the route handler
+    return deletedEvent; // Return the deleted event back to the route handler
 }
