@@ -1,7 +1,7 @@
 // GET routes (all + by id)
 
 import express from 'express';
-import { getAllEvents, getEventById, createEvent, updateEvent, deleteEvent } from '../services/eventService.js';
+import { getAllEvents, getEventById, createEvent, updateEvent, deleteEvent, deleteExpiredEvents } from '../services/eventService.js';
 
 const router = express.Router();
 
@@ -60,5 +60,37 @@ router.put('/:id', async (req, res) => {
         res.status(500).json({message: "Server Error: Could not update event."})
     } 
 })
+
+// DELETE /events/:expiredEvent (Removes all past event)
+router.delete('/expired', async (req, res) => {
+    try {
+        const removed = await deleteExpiredEvents();
+        res.status(200).json({
+            message: "Cleanup completed.",
+            count: removed.length,
+            deletedEvents: removed
+        });
+    }catch (error){
+        console.error("Error deleting expired events:", error);
+        res.status(500).json({message: "Server Error: Could not delete expired events."})
+    }
+});
+
+// DELETE /events/:id (Removes and event from the database by it's ID)
+router.delete('/:id', async (req, res) => {
+    try {
+        const deleted = await deleteEvent (req.params.id);
+        res.status(200).json({message: "Event successfully deleted.", event: deleted});
+    }catch (error) {
+        // Catch missing resource errors (404) directly from the service layer
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({message: error.message});
+        }
+        //fallback for unexpected system errors
+        console.error(`Error deleting event ${req.params.id}:`, error)
+        res.status(500).json({message: "Server Error: Could not delete event."})
+    }
+})
+
 
 export default router;
